@@ -196,7 +196,7 @@
 <div id="form-view">
   <div class="wrap">
     <span class="eyebrow"><span class="dot"></span>Turma de maio · vagas limitadas</span>
-    <h1>Antes de te chamar pro grupo,<br>preciso entender sua <em>carteira</em>.</h1>
+    <h1>Corretor 50K no <em>Coco Bambu</em></h1>
     <p class="sub">Leva menos de um minuto. É só pra eu te encaixar certo e já te chamar no WhatsApp com a informação certa.</p>
 
     <div class="card">
@@ -314,6 +314,7 @@
 
 <script>
   const STORAGE_KEY = 'corretor50k-leads';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwsOOd3lIt9wNAIsRAczR0QBKIUrUE8TIFEfvuEO_IksVVykqBzT06SWP4zD6Ktj9Ei/exec';
   const PANEL_PIN = '5000'; // troque esse código antes de divulgar o link do painel
 
   // ---- radio pills ----
@@ -351,6 +352,14 @@
 
   // ---- storage helpers ----
   async function loadLeads(){
+    if(SCRIPT_URL){
+      try{
+        const res = await fetch(SCRIPT_URL);
+        return await res.json();
+      }catch(e){
+        return [];
+      }
+    }
     try{
       const res = await window.storage.get(STORAGE_KEY, true);
       return res && res.value ? JSON.parse(res.value) : [];
@@ -358,7 +367,17 @@
       return [];
     }
   }
-  async function saveLeads(leads){
+  async function saveLead(lead){
+    if(SCRIPT_URL){
+      const res = await fetch(SCRIPT_URL, {
+        method: 'POST',
+        headers: {'Content-Type': 'text/plain;charset=utf-8'},
+        body: JSON.stringify(lead)
+      });
+      return res.ok;
+    }
+    const leads = await loadLeads();
+    leads.push(lead);
     return window.storage.set(STORAGE_KEY, JSON.stringify(leads), true);
   }
 
@@ -383,9 +402,7 @@
       recebido: new Date().toISOString()
     };
     try{
-      const leads = await loadLeads();
-      leads.push(lead);
-      const result = await saveLeads(leads);
+      const result = await saveLead(lead);
       if(!result){
         throw new Error('Falha ao salvar');
       }
